@@ -1,0 +1,64 @@
+body {
+  font-family: sans-serif;
+  background-color: #f2f7fb;
+  margin: 0;
+  padding: 0;
+}
+
+.cuaca-container {
+  max-width: 900px;
+  margin: 20px auto;
+  padding: 15px;
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.header {
+  background-color: #4da6ff;
+  padding: 20px;
+  border-radius: 12px;
+  color: white;
+  text-align: left;
+}
+
+.suhu {
+  font-size: 48px;
+  font-weight: bold;
+}
+
+.info-kecil {
+  text-align: right;
+  font-size: 12px;
+  color: #666;
+  text-align: right;
+}
+
+.info-lengkap {
+  background-color: #eef3f7;
+  border-radius: 8px;
+  padding: 15px;
+  margin-top: 10px;
+  line-height: 1.6em;
+  display: flex;
+}
+
+.prakiraan {
+  margin-top: 20px;
+  overflow-x: auto;
+}
+
+.jam-container {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.jam-box {
+  background-color: #dff0fa;
+  padding: 10px;
+  border-radius: 10px;
+  text-align: center;
+  min-width: 100px;
+}

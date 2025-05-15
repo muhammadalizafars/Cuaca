@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Cuaca Cicaheum Realtime</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="cuaca-container">
+        <div class="info-kecil">
+            <p id="waktu-update">UPDATE: --</p>
+        </div>
+        <div class="header">
+            <div class="ilustrasi">
+                <h1>CUACA SAAT INI</h1>
+                <h2 id="cuaca-sekarang">Memuat...</h2>
+                <div class="suhu" id="suhu-sekarang">--°C</div>
+                <h2 id="lokasi">di ...</h2>
+            </div>
+        </div>
+
+        <div class="info-lengkap">
+            <p id="kelembapan">🌫️ Kelembapan: --%</p>
+            <p id="angin">🌬️ Kecepatan Angin: -- km/jam</p>
+            <p id="arah-angin">🧭 Arah Angin dari: --</p>
+            <p id="jarak-pandang">👁️ Jarak Pandang: --</p>
+        </div>
+
+        <h3 style="text-align:center">Prakiraan 24 Jam Mendatang</h3>
+        <div class="prakiraan">
+            <div class="jam-container" id="jam-container">
+                <p>Memuat data prakiraan...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function fetchCuaca() {
+            try {
+                const response = await fetch("https://api.bmkg.go.id/publik/prakiraan-cuaca?adm4=32.73.16.1004");
+                const result = await response.json();
+
+                const lokasi = result.data[0].lokasi;
+                const cuacaList = result.data[0].cuaca[0];
+
+                const now = new Date();
+                const nowHour = now.getHours();
+
+                const cuacaSekarang = cuacaList.find(item => {
+                    const jam = new Date(item.local_datetime).getHours();
+                    return jam === nowHour;
+                }) || cuacaList[0];
+
+                // Lokasi
+                document.getElementById("lokasi").textContent = `di ${lokasi.desa.toUpperCase()}, ${lokasi.kecamatan.toUpperCase()}, ${lokasi.kotkab.toUpperCase()}`;
+
+                // Info cuaca saat ini
+                document.getElementById("cuaca-sekarang").textContent = cuacaSekarang.weather_desc;
+                document.getElementById("suhu-sekarang").textContent = cuacaSekarang.t + "°C";
+                document.getElementById("waktu-update").textContent = "UPDATE: " + new Date(cuacaSekarang.local_datetime).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" });
+                document.getElementById("kelembapan").textContent = "🌫️ Kelembapan: " + cuacaSekarang.hu + "%";
+                document.getElementById("angin").textContent = "🌬️ Kecepatan Angin: " + cuacaSekarang.ws + " km/jam";
+                document.getElementById("arah-angin").textContent = "🧭 Arah Angin dari: " + cuacaSekarang.wd + " (→ " + cuacaSekarang.wd_to + ")";
+                document.getElementById("jarak-pandang").textContent = "👁️ Jarak Pandang: " + cuacaSekarang.vs_text;
+
+                // Tampilkan 24 jam ke depan
+                const container = document.getElementById("jam-container");
+                container.innerHTML = "";
+
+                cuacaList.slice(0, 24).forEach(item => {
+                    const waktu = new Date(item.local_datetime).toLocaleTimeString("id-ID", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        hour12: false
+                    });
+
+                    const box = document.createElement("div");
+                    box.className = "jam-box";
+                    box.innerHTML = `
+            <p><strong>${waktu} WIB</strong></p>
+            <img src="${item.image}" alt="${item.weather_desc}" width="60" height="60">
+            <p>${item.weather_desc}</p>
+            <p>${item.t}°C</p>
+          `;
+                    container.appendChild(box);
+                });
+
+            } catch (error) {
+                console.error("Gagal memuat data cuaca:", error);
+                document.getElementById("jam-container").innerHTML = "<p>Gagal memuat data.</p>";
+            }
+        }
+
+        fetchCuaca();
+    </script>
+</body>
+
+</html>
