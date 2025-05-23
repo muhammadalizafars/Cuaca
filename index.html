@@ -4,116 +4,19 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Cuaca Cicaheum Realtime</title>
+    <title>Cuaca Realtime</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        body {
-            font-family: sans-serif;
-            background-color: #f2f7fb;
-            margin: 30;
-            padding: 30;
-        }
-
-        .cuaca-container {
-            max-width: 1200px;
-            margin: 20px auto;
-            padding: 15px;
-            background-color: white;
-            border-radius: 12px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
-
-        .header {
-            padding: 20px;
-            border-radius: 12px;
-            color: white;
-            text-align: left;
-        }
-
-        .suhu {
-            font-size: 48px;
-            font-weight: bold;
-        }
-
-        .ikon-cuaca {
-            width: 80px;
-            margin: 10px auto;
-        }
-
-        .info-kecil {
-            text-align: right;
-            font-size: 12px;
-            color: #666;
-        }
-
-        .info {
-            display: flex;
-            flex-wrap: wrap;
-            overflow-x: auto;
-            gap: 20px;
-        }
-
-        .info-lengkap {
-            background-color: #eef3f7;
-            border-radius: 8px;
-            padding: 15px;
-            margin-top: 10px;
-            line-height: 1.6em;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        .prakiraan {
-            margin-top: 20px;
-            overflow-x: auto;
-        }
-
-        .jam-container {
-            display: flex;
-            overflow-x: auto;
-            gap: 10px;
-            padding: 10px 0;
-        }
-
-        .jam-box {
-            background: #e0f0fb;
-            border-radius: 12px;
-            padding: 10px;
-            min-width: 120px;
-            text-align: center;
-            box-shadow: 0 0 5px #ccc;
-            flex-shrink: 0;
-        }
-
-        .grafik-maps-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 20px;
-            margin-top: 20px;
-            justify-content: center;
-        }
-
-        .data,
-        .maps {
-            flex: 1;
-            min-width: 200px;
-        }
-
-        iframe {
-            width: 100%;
-            height: 300px;
-            border: 0;
-            border-radius: 12px;
-        }
-    </style>
+    <link rel="stylesheet" href="main.css">
 </head>
 
 <body>
     <div class="cuaca-container">
+        <!-- Info Update -->
         <div class="info-kecil">
             <p id="waktu-update">UPDATE: --</p>
         </div>
+
+        <!-- Header Cuaca -->
         <div class="header" id="header-bg">
             <h1>CUACA SAAT INI</h1>
             <img id="ikon-cuaca" src="" alt="Icon Cuaca" class="ikon-cuaca" />
@@ -122,6 +25,7 @@
             <h2 id="lokasi">di ...</h2>
         </div>
 
+        <!-- Info Lengkap (berjajar di bawah header) -->
         <div class="info">
             <div class="info-lengkap">
                 <p id="kelembapan">Kelembapan: --%</p>
@@ -137,17 +41,20 @@
             </div>
         </div>
 
+        <!-- Prakiraan Jam -->
         <div class="prakiraan">
             <div class="jam-container" id="jam-container">
                 <p>Memuat data prakiraan...</p>
             </div>
         </div>
 
-        <h3 style="text-align: center">Grafik Suhu & Peta Lokasi</h3>
+        <!-- Grafik & Peta -->
+        <h3>Grafik Suhu & Peta Lokasi</h3>
         <div class="grafik-maps-container">
             <div class="maps">
-                <iframe src="https://www.google.com/maps?q=-6.922222,107.6425&hl=id&z=14&output=embed" allowfullscreen>
-                </iframe>
+                <iframe id="mini-map" src="https://www.google.com/maps?q=-6.922222,107.6425&hl=id&z=14&output=embed"
+                    allowfullscreen></iframe>
+                <button id="open-fullscreen-map">Lihat Peta Layar Penuh</button>
             </div>
             <div class="data">
                 <canvas id="grafik-suhu" height="300"></canvas>
@@ -155,10 +62,28 @@
         </div>
     </div>
 
+    <!-- Fullscreen Map Overlay -->
+    <div id="fullscreen-map-overlay" class="fullscreen-map-overlay">
+        <button class="fullscreen-map-close" id="close-fullscreen-map" title="Tutup Peta">&times;</button>
+        <iframe class="fullscreen-map-iframe"
+            src="https://www.google.com/maps?q=-6.922222,107.6425&hl=id&z=14&output=embed" allowfullscreen></iframe>
+    </div>
+
     <script>
+        // =========================
+        // Helper: Arah Mata Angin
+        // =========================
+        const arahMataAngin = {
+            N: "Utara", NE: "Timur Laut", E: "Timur", SE: "Tenggara",
+            S: "Selatan", SW: "Barat Daya", W: "Barat", NW: "Barat Laut"
+        };
+
+        // =========================
+        // Fetch & Render Cuaca
+        // =========================
         async function fetchCuaca() {
             try {
-                const response = await fetch("https://api.bmkg.go.id/publik/prakiraan-cuaca?adm4=32.73.16.1004");
+                const response = await fetch("https://api.bmkg.go.id/publik/prakiraan-cuaca?adm4=16.71.02.1002");
                 const result = await response.json();
 
                 const lokasi = result.data[0].lokasi;
@@ -166,33 +91,38 @@
                 const now = new Date();
                 const nowHour = now.getHours();
 
-                const arahMataAngin = {
-                    N: "Utara", NE: "Timur Laut", E: "Timur", SE: "Tenggara",
-                    S: "Selatan", SW: "Barat Daya", W: "Barat", NW: "Barat Laut"
-                };
+                // Pilih data cuaca saat ini
+                const cuacaSekarang = cuacaList.find(item =>
+                    new Date(item.local_datetime).getHours() === nowHour
+                ) || cuacaList[0];
 
-                const cuacaSekarang = cuacaList.find(item => new Date(item.local_datetime).getHours() === nowHour) || cuacaList[0];
-
+                // Render info utama
                 document.getElementById("cuaca-sekarang").textContent = cuacaSekarang.weather_desc;
                 document.getElementById("suhu-sekarang").textContent = cuacaSekarang.t + "°C";
                 document.getElementById("waktu-update").textContent =
                     "UPDATE: " + new Date(cuacaSekarang.local_datetime).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" });
-
                 document.getElementById("kelembapan").textContent = "🌫️ Kelembapan: " + cuacaSekarang.hu + "%";
                 document.getElementById("angin").textContent = "🌬️ Kecepatan Angin: " + cuacaSekarang.ws + " km/jam";
                 document.getElementById("arah-angin").textContent = "🌍 Arah Angin dari: " + (arahMataAngin[cuacaSekarang.wd] || cuacaSekarang.wd);
                 document.getElementById("jarak-pandang").textContent = "👁️ Jarak Pandang: " + cuacaSekarang.vs_text;
-                document.getElementById("lokasi").textContent = `DI ${lokasi.desa.toUpperCase()}, ${lokasi.kecamatan.toUpperCase()}, ${lokasi.kotkab.toUpperCase()}`;
+                document.getElementById("lokasi").textContent =
+                    `DI ${lokasi.desa.toUpperCase()}, ${lokasi.kecamatan.toUpperCase()}, ${lokasi.kotkab.toUpperCase()}`;
 
+                // Ikon cuaca
                 document.getElementById("ikon-cuaca").src = cuacaSekarang.image;
                 document.getElementById("ikon-cuaca").alt = cuacaSekarang.weather_desc;
 
+                // Set header background to the weather icon from API
                 const header = document.getElementById("header-bg");
-                const desc = cuacaSekarang.weather_desc.toLowerCase();
-                if (desc.includes("hujan")) header.style.backgroundColor = "#607d8b";
-                else if (desc.includes("cerah")) header.style.backgroundColor = "#4da6ff";
-                else header.style.backgroundColor = "#90caf9";
+                header.style.backgroundImage = `url('${cuacaSekarang.image}')`;
+                header.style.backgroundSize = "contain";
+                header.style.backgroundRepeat = "no-repeat";
+                header.style.backgroundPosition = "center";
+                header.style.backgroundColor = "#4da6ff"; // fallback color
 
+                // =========================
+                // Prakiraan Jam & Grafik 24 Jam
+                // =========================
                 const container = document.getElementById("jam-container");
                 container.innerHTML = "";
                 const dataGrafik = { labels: [], suhu: [] };
@@ -221,7 +151,6 @@
                         });
                     }
                 }
-
                 // Tambahkan data terakhir
                 const last = cuacaList[cuacaList.length - 1];
                 interpolated.push({
@@ -231,25 +160,31 @@
                     image: last.image
                 });
 
-                interpolated.slice(0, 12).forEach(item => {
+                // Ambil 24 jam ke depan (atau sebanyak data yang tersedia, maksimal 24)
+                const grafikItems = interpolated.slice(0, 24);
+
+                grafikItems.forEach(item => {
                     const waktu = item.waktu.toLocaleTimeString("id-ID", {
                         hour: "2-digit", minute: "2-digit", hour12: false
                     });
 
+                    // Box prakiraan jam
                     const box = document.createElement("div");
                     box.className = "jam-box";
                     box.innerHTML = `
-            <p><strong>${waktu} WIB</strong></p>
-            <img src="${item.image}" alt="${item.desc}" width="50">
-            <p>${item.desc}</p>
-            <p>${item.t}°C</p>
-          `;
+                    <p><strong>${waktu} WIB</strong></p>
+                    <img src="${item.image}" alt="${item.desc}" width="50">
+                    <p>${item.desc}</p>
+                    <p>${item.t}°C</p>
+                `;
                     container.appendChild(box);
 
+                    // Data grafik
                     dataGrafik.labels.push(waktu);
                     dataGrafik.suhu.push(item.t);
                 });
 
+                // Render grafik suhu 24 jam
                 new Chart(document.getElementById("grafik-suhu"), {
                     type: "line",
                     data: {
@@ -275,7 +210,44 @@
             }
         }
 
-        fetchCuaca();
+        // =========================
+        // Fullscreen Map Overlay
+        // =========================
+        function setupFullscreenMap() {
+            const openBtn = document.getElementById('open-fullscreen-map');
+            const closeBtn = document.getElementById('close-fullscreen-map');
+            const overlay = document.getElementById('fullscreen-map-overlay');
+
+            function openMap() {
+                overlay.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            }
+            function closeMap() {
+                overlay.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+
+            openBtn.addEventListener('click', openMap);
+            closeBtn.addEventListener('click', closeMap);
+
+            // Close on overlay click (but not on iframe or close button)
+            overlay.addEventListener('click', function (e) {
+                if (e.target === overlay) closeMap();
+            });
+
+            // ESC key closes overlay
+            document.addEventListener('keydown', function (e) {
+                if (e.key === "Escape" && overlay.classList.contains('active')) closeMap();
+            });
+        }
+
+        // =========================
+        // Inisialisasi
+        // =========================
+        document.addEventListener("DOMContentLoaded", function () {
+            fetchCuaca();
+            setupFullscreenMap();
+        });
     </script>
 </body>
 
