@@ -74,10 +74,10 @@ async function fetchCuaca(kodeWilayah = currentKodeWilayah) {
         document.getElementById("suhu-sekarang").textContent = cuacaSekarang.t + "°C";
         document.getElementById("waktu-update").textContent =
             "UPDATE: " + new Date(cuacaSekarang.local_datetime).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" });
-        document.getElementById("kelembapan").textContent = "🌫️ Kelembapan: " + cuacaSekarang.hu + "%";
-        document.getElementById("angin").textContent = "🌬️ Kecepatan Angin: " + cuacaSekarang.ws + " km/jam";
-        document.getElementById("arah-angin").textContent = "🌍 Arah Angin dari: " + (arahMataAngin[cuacaSekarang.wd] || cuacaSekarang.wd);
-        document.getElementById("jarak-pandang").textContent = "👁️ Jarak Pandang: " + cuacaSekarang.vs_text;
+        document.getElementById("kelembapan").textContent = " Kelembapan: " + cuacaSekarang.hu + "%";
+        document.getElementById("angin").textContent = " Kecepatan Angin: " + cuacaSekarang.ws + " km/jam";
+        document.getElementById("arah-angin").textContent = " Arah Angin dari: " + (arahMataAngin[cuacaSekarang.wd] || cuacaSekarang.wd);
+        document.getElementById("jarak-pandang").textContent = " Jarak Pandang: " + cuacaSekarang.vs_text;
         document.getElementById("lokasi").textContent =
             `DI ${lokasi.desa.toUpperCase()}, ${lokasi.kecamatan.toUpperCase()}, ${lokasi.kotkab.toUpperCase()}`;
 
@@ -108,8 +108,7 @@ async function fetchCuaca(kodeWilayah = currentKodeWilayah) {
             const currDate = new Date(curr.local_datetime);
             interpolated.push({
                 waktu: currDate,
-                t: curr.t,
-                desc: curr.weather_desc,
+                t: curr.t,               
                 image: curr.image
             });
 
@@ -117,8 +116,7 @@ async function fetchCuaca(kodeWilayah = currentKodeWilayah) {
                 const interTime = new Date(currDate.getTime() + j * 3600000);
                 interpolated.push({
                     waktu: interTime,
-                    t: Math.round((curr.t * (3 - j) + next.t * j) / 3),
-                    desc: curr.weather_desc,
+                    t: Math.round((curr.t * (3 - j) + next.t * j) / 3),              
                     image: curr.image
                 });
             }
@@ -128,12 +126,11 @@ async function fetchCuaca(kodeWilayah = currentKodeWilayah) {
         interpolated.push({
             waktu: new Date(last.local_datetime),
             t: last.t,
-            desc: last.weather_desc,
             image: last.image
         });
 
         // Ambil 24 jam ke depan (atau sebanyak data yang tersedia, maksimal 24)
-        const grafikItems = interpolated.slice(0, 24);
+        const grafikItems = interpolated.slice(0, 6);
 
         grafikItems.forEach(item => {
             const waktu = item.waktu.toLocaleTimeString("id-ID", {
@@ -146,7 +143,6 @@ async function fetchCuaca(kodeWilayah = currentKodeWilayah) {
             box.innerHTML = `
                 <p><strong>${waktu} WIB</strong></p>
                 <img src="${item.image}" alt="${item.desc}" width="50">
-                <p>${item.desc}</p>
                 <p>${item.t}°C</p>
             `;
             container.appendChild(box);
